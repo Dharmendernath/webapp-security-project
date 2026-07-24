@@ -1,0 +1,77 @@
+pipeline {
+    agent any
+
+    environment {
+        TARGET_URL = 'http://nginx-proxy:80'
+        ZAP_REPORT_DIR = "${WORKSPACE}/zap-reports"
+    }
+
+    stages {
+
+        stage('Build') {
+            steps {
+                echo 'Building environment...'
+                sh 'docker compose build'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo 'Starting Juice Shop + nginx...'
+                sh 'docker compose up -d'
+                sh 'sleep 10'
+            }
+        }
+
+        stage('Security Scan') {
+            steps {
+                echo 'Running ZAP baseline scan...'
+                sh """
+                    mkdir -p ${ZAP_REPORT_DIR}
+                    docker run --rm \
+                      --network webapp-security-project_default \
+                      -v ${ZAP_REPORT_DIR}:/zap/wrk/:rw \
+                      ghcr.io/zaproxy/zaproxy:stable \
+                      zap-baseline.py -t ${TARGET_URL} \
+                      -r zap-report-\$(date +%Y%m%d-%H%M%S).html \
+                      -I
+                """
+            }
+        }
+
+        stage('Ansible Remediate') {
+            steps {
+                echo 'Applying remediation playbook...'
+                sh 'ansible-playbook ansible/milestone9_remediation.yml'
+            }
+        }
+
+        stage('Re-scan') {
+            steps {
+                echo 'Re-running ZAP scan to verify remediation...'
+                sh """
+                    docker run --rm \
+                      --network webapp-security-project_default \
+                      -v ${ZAP_REPORT_DIR}:/zap/wrk/:rw \
+                      ghcr.io/zaproxy/zaproxy:stable \
+                      zap-baseline.py -t ${TARGET_URL} \
+                      -r zap-rescan-\$(date +%Y%m%d-%H%M%S).html \
+                      -I
+                """
+            }
+        }
+
+        stage('Report') {
+            steps {
+                echo 'Archiving ZAP reports...'
+                archiveArtifacts artifacts: 'zap-reports/*.html', fingerprint: true
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline finished.'
+        }
+    }
+}

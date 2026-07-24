@@ -1,0 +1,56 @@
+---
+- name: Milestone 9 - Deploy remediated nginx security config
+  hosts: localhost
+  connection: local
+  become: false
+
+  vars:
+    nginx_conf_path: /home/dharm/webapp-security-project/nginx.conf
+    project_dir: "{{ playbook_dir }}/.."
+
+  tasks:
+
+    - name: Deploy known-good nginx.conf with all security headers
+      copy:
+        dest: "{{ nginx_conf_path }}"
+        content: |
+          server {
+              listen 80;
+              server_tokens off;
+              location / {
+                  proxy_pass http://juice-shop:3000;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+                  proxy_hide_header X-Frame-Options;
+                  proxy_hide_header X-Content-Type-Options;
+                  proxy_hide_header Content-Security-Policy;
+                  proxy_hide_header Feature-Policy;
+                  proxy_hide_header Access-Control-Allow-Origin;
+
+                  # BEGIN ANSIBLE MANAGED SECURITY HEADERS
+                  add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'self'; form-action 'self';" always;
+                  add_header X-Content-Type-Options nosniff always;
+                  add_header X-Frame-Options DENY always;
+                  add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
+                  add_header Cross-Origin-Embedder-Policy "require-corp" always;
+                  add_header Cross-Origin-Opener-Policy "same-origin" always;
+                  # END ANSIBLE MANAGED SECURITY HEADERS
+              }
+          }
+      register: conf_change
+
+    - name: Recreate nginx container to refresh bind mount (WSL2-safe method)
+      shell: |
+        docker compose rm -sf nginx
+        docker compose up -d nginx
+      args:
+        chdir: "{{ project_dir }}"
+      when: conf_change.changed
+    - name: Wait for nginx to be healthy again
+      wait_for:
+        host: localhost
+        port: 8080
+        delay: 3
+        timeout: 30
