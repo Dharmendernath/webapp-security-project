@@ -11,14 +11,14 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Pulling latest images...'
-                sh 'docker compose pull'
+                sh 'docker-compose pull'
             }
         }
 
         stage('Deploy') {
             steps {
                 echo 'Starting Juice Shop + nginx...'
-                sh 'docker compose up -d'
+                sh 'docker-compose up -d'
                 sh 'sleep 10'
             }
         }
