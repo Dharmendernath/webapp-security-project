@@ -30,7 +30,7 @@ pipeline {
                 sh """
                     mkdir -p ${ZAP_REPORT_DIR}
                     chmod 777 ${ZAP_REPORT_DIR}
-                    docker run --rm \
+                    docker run --rm --user root \
                       --network webapp-security-project_default \
                       -v ${ZAP_REPORT_DIR}:/zap/wrk/:rw \
                       ghcr.io/zaproxy/zaproxy:stable \
