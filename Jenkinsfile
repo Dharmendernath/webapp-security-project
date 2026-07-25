@@ -29,6 +29,7 @@ pipeline {
                 echo 'Running ZAP baseline scan...'
                 sh """
                     mkdir -p ${ZAP_REPORT_DIR}
+                    chmod 777 ${ZAP_REPORT_DIR}
                     docker run --rm \
                       --network webapp-security-project_default \
                       -v ${ZAP_REPORT_DIR}:/zap/wrk/:rw \
