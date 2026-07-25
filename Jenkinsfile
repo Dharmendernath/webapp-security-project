@@ -10,8 +10,8 @@ pipeline {
 
         stage('Build') {
             steps {
-                echo 'Building environment...'
-                sh 'docker compose build'
+                echo 'Pulling latest images...'
+                sh 'docker compose pull'
             }
         }
 
