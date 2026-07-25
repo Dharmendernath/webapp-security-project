@@ -12,14 +12,14 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Pulling latest images...'
-                sh 'docker-compose pull juice-shop nginx'
+                sh 'cd /home/dharm/webapp-security-project && docker-compose pull juice-shop nginx'
             }
         }
 
         stage('Deploy') {
             steps {
                 echo 'Starting Juice Shop + nginx...'
-                sh 'docker-compose up -d juice-shop nginx'
+                sh 'cd /home/dharm/webapp-security-project && docker-compose up -d juice-shop nginx'
                 sh 'sleep 10'
             }
         }
@@ -43,7 +43,7 @@ pipeline {
         stage('Ansible Remediate') {
             steps {
                 echo 'Applying remediation playbook...'
-                sh 'ansible-playbook ansible/milestone9_remediation.yml'
+                sh 'ansible-playbook /home/dharm/webapp-security-project/ansible/milestone9_remediation.yml'
             }
         }
 
