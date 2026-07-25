@@ -52,7 +52,7 @@ pipeline {
             steps {
                 echo 'Re-running ZAP scan to verify remediation...'
                 sh """
-                    docker run --rm --user root\
+                    docker run --rm --user root \
                       --network webapp-security-project_default \
                       -v ${ZAP_REPORT_DIR}:/zap/wrk/:rw \
                       ghcr.io/zaproxy/zaproxy:stable \
