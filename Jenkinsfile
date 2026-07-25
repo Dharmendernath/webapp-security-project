@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         TARGET_URL = 'http://nginx-proxy:80'
-        ZAP_REPORT_DIR = "${WORKSPACE}/zap-reports"
+        ZAP_REPORT_DIR = '/home/dharm/webapp-security-project/zap-reports'
         COMPOSE_PROJECT_NAME = 'webapp-security-project'
     }
 
@@ -65,6 +65,11 @@ pipeline {
 
         stage('Report') {
             steps {
+                echo 'Copying ZAP reports into workspace for archiving...'
+                sh """
+                    mkdir -p ${WORKSPACE}/zap-reports
+                    cp ${ZAP_REPORT_DIR}/*.html ${WORKSPACE}/zap-reports/ || true
+                """
                 echo 'Archiving ZAP reports...'
                 archiveArtifacts artifacts: 'zap-reports/*.html', fingerprint: true
             }
