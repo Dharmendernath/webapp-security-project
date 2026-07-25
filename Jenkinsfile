@@ -4,6 +4,7 @@ pipeline {
     environment {
         TARGET_URL = 'http://nginx-proxy:80'
         ZAP_REPORT_DIR = "${WORKSPACE}/zap-reports"
+        COMPOSE_PROJECT_NAME = 'webapp-security-project'
     }
 
     stages {
@@ -11,14 +12,14 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Pulling latest images...'
-                sh 'docker-compose pull'
+                sh 'docker-compose pull juice-shop nginx'
             }
         }
 
         stage('Deploy') {
             steps {
                 echo 'Starting Juice Shop + nginx...'
-                sh 'docker-compose up -d'
+                sh 'docker-compose up -d juice-shop nginx'
                 sh 'sleep 10'
             }
         }
